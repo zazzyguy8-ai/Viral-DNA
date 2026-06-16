@@ -42,33 +42,33 @@
 
 /* Viral DNA — light design system */
 :root {
-  --background: #f8f8fb;
-  --foreground: #09090b;
+  --background: #F4F4F5;
+  --foreground: #111827;
   --card: #ffffff;
-  --card-foreground: #09090b;
+  --card-foreground: #111827;
   --popover: #ffffff;
-  --popover-foreground: #09090b;
-  --primary: #7c5cfc;
+  --popover-foreground: #111827;
+  --primary: #6D28D9;
   --primary-foreground: #ffffff;
-  --secondary: #f2f2f7;
-  --secondary-foreground: #09090b;
-  --muted: #f2f2f7;
-  --muted-foreground: #71717a;
-  --accent: #ede9fe;
-  --accent-foreground: #5b21b6;
+  --secondary: #F4F4F5;
+  --secondary-foreground: #111827;
+  --muted: #F4F4F5;
+  --muted-foreground: #6B7280;
+  --accent: #EDE9FE;
+  --accent-foreground: #5B21B6;
   --destructive: #ef4444;
-  --border: #e4e4e9;
-  --input: #f2f2f7;
-  --ring: #7c5cfc;
-  --radius: 0.5rem;
+  --border: #E4E4E7;
+  --input: #ffffff;
+  --ring: #6D28D9;
+  --radius: 0.75rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #09090b;
-  --sidebar-primary: #7c5cfc;
+  --sidebar-foreground: #111827;
+  --sidebar-primary: #6D28D9;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ede9fe;
-  --sidebar-accent-foreground: #5b21b6;
-  --sidebar-border: #e4e4e9;
-  --sidebar-ring: #7c5cfc;
+  --sidebar-accent: #EDE9FE;
+  --sidebar-accent-foreground: #6D28D9;
+  --sidebar-border: #E4E4E7;
+  --sidebar-ring: #6D28D9;
 }
 
 @layer base {
@@ -85,34 +85,34 @@
 
 /* Viral DNA utility classes */
 .gradient-text {
-  background: linear-gradient(135deg, #5b21b6 0%, #7c5cfc 60%, #a78bfa 100%);
+  background: linear-gradient(135deg, #5B21B6 0%, #6D28D9 60%, #A78BFA 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .gradient-primary {
-  background: linear-gradient(135deg, #7c5cfc 0%, #5b3fd8 100%);
+  background: linear-gradient(135deg, #6D28D9 0%, #5B21B6 100%);
 }
 
 .surface {
   background: #ffffff;
-  border: 1px solid #e4e4e9;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid #E4E4E7;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .surface-elevated {
   background: #ffffff;
-  border: 1px solid #e4e4e9;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #E4E4E7;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .glow-primary {
-  box-shadow: 0 0 32px rgba(124, 92, 252, 0.18);
+  box-shadow: 0 0 24px rgba(109, 40, 217, 0.14);
 }
 
 /* Smooth scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #e4e4e9 transparent;
+  scrollbar-color: #E4E4E7 transparent;
 }

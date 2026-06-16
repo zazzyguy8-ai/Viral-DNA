@@ -1,0 +1,15 @@
+<svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Viral DNA</title>
+  <rect x="30" y="20" width="160" height="160" rx="30" fill="#6D28D9"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M 82,56 C 82,71 138,71 138,86 C 138,101 82,101 82,116 C 82,131 138,131 138,146" stroke="white" stroke-width="7"/>
+    <path d="M 138,56 C 138,71 82,71 82,86 C 82,101 138,101 138,116 C 138,131 82,131 82,146" stroke="white" stroke-width="7" opacity="0.45"/>
+    <line x1="82" y1="56" x2="138" y2="56" stroke="white" stroke-width="4.5" opacity="0.5"/>
+    <line x1="82" y1="86" x2="138" y2="86" stroke="white" stroke-width="4.5" opacity="0.5"/>
+    <line x1="82" y1="116" x2="138" y2="116" stroke="white" stroke-width="4.5" opacity="0.5"/>
+    <line x1="82" y1="146" x2="138" y2="146" stroke="white" stroke-width="4.5" opacity="0.5"/>
+  </g>
+  <text x="212" y="115" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="60" font-weight="700" letter-spacing="-2" fill="#111827">Viral</text>
+  <text x="375" y="115" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="60" font-weight="700" letter-spacing="-2" fill="#6D28D9">DNA</text>
+  <text x="212" y="150" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15" fill="#8b8b9a" letter-spacing="0.4">AI Growth OS for Creators</text>
+</svg>
