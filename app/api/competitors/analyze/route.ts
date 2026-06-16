@@ -11,6 +11,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
+      .upsert({ id: user.id, full_name: user.user_metadata?.full_name ?? null }, { onConflict: "id" });
+
     const body = await request.json() as CompetitorInput;
     const { platform, handle, niche, description } = body;
 

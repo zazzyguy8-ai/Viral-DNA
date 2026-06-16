@@ -11,6 +11,9 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
+      .upsert({ id: user.id, full_name: user.user_metadata?.full_name ?? null }, { onConflict: "id" });
+
     // Get latest DNA profile
     const { data: dnaRows } = await (supabase
       .from("viral_dna_profiles") as ReturnType<typeof supabase.from>)
