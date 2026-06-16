@@ -38,6 +38,7 @@ export default function SignInPage() {
     <div>
       {/* Logo */}
       <div className="mb-8 text-center">
+        <img src="/viral-dna-icon.svg" alt="Viral DNA" className="h-14 w-14 mx-auto mb-3 rounded-2xl" />
         <span className="text-2xl font-bold tracking-tight gradient-text">Viral DNA</span>
         <p className="mt-2 text-sm text-muted-foreground">Sign in to your Growth OS</p>
       </div>
