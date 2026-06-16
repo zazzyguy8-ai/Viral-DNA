@@ -40,34 +40,34 @@
   --radius-2xl: calc(var(--radius) * 1.8);
 }
 
-/* Plou.ai design tokens — dark only */
+/* Viral DNA — light design system */
 :root {
-  --background: #0a0a0b;
-  --foreground: #e8e8e8;
-  --card: #111115;
-  --card-foreground: #e8e8e8;
-  --popover: #111115;
-  --popover-foreground: #e8e8e8;
+  --background: #f8f8fb;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
   --primary: #7c5cfc;
   --primary-foreground: #ffffff;
-  --secondary: #1a1a1e;
-  --secondary-foreground: #e8e8e8;
-  --muted: #1a1a1e;
-  --muted-foreground: #666666;
-  --accent: #1e1e28;
-  --accent-foreground: #e8e8e8;
+  --secondary: #f2f2f7;
+  --secondary-foreground: #09090b;
+  --muted: #f2f2f7;
+  --muted-foreground: #71717a;
+  --accent: #ede9fe;
+  --accent-foreground: #5b21b6;
   --destructive: #ef4444;
-  --border: #1e1e28;
-  --input: #1a1a1e;
+  --border: #e4e4e9;
+  --input: #f2f2f7;
   --ring: #7c5cfc;
   --radius: 0.5rem;
-  --sidebar: #0d0d0f;
-  --sidebar-foreground: #e8e8e8;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #09090b;
   --sidebar-primary: #7c5cfc;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1a1a1e;
-  --sidebar-accent-foreground: #e8e8e8;
-  --sidebar-border: #1e1e28;
+  --sidebar-accent: #ede9fe;
+  --sidebar-accent-foreground: #5b21b6;
+  --sidebar-border: #e4e4e9;
   --sidebar-ring: #7c5cfc;
 }
 
@@ -83,9 +83,9 @@
   }
 }
 
-/* Plou.ai utility classes */
+/* Viral DNA utility classes */
 .gradient-text {
-  background: linear-gradient(135deg, #ffffff 0%, #a78bfa 100%);
+  background: linear-gradient(135deg, #5b21b6 0%, #7c5cfc 60%, #a78bfa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -96,21 +96,23 @@
 }
 
 .surface {
-  background: #111115;
-  border: 1px solid #1e1e28;
+  background: #ffffff;
+  border: 1px solid #e4e4e9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .surface-elevated {
-  background: #151519;
-  border: 1px solid #252530;
+  background: #ffffff;
+  border: 1px solid #e4e4e9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .glow-primary {
-  box-shadow: 0 0 40px rgba(124, 92, 252, 0.15);
+  box-shadow: 0 0 32px rgba(124, 92, 252, 0.18);
 }
 
 /* Smooth scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1e1e28 transparent;
+  scrollbar-color: #e4e4e9 transparent;
 }
