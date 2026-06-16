@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Copy, Check, Zap, Video, AlignLeft, Layers, MessageSquare, Circle, Radio } from "lucide-react";
 import type { ContentIdea } from "@/lib/anthropic/idea-generator";
 
@@ -22,9 +23,11 @@ function ViralityBar({ score }: { score: number }) {
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-1 bg-border rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full ${color} transition-all duration-700`}
-          style={{ width: `${score}%` }}
+        <motion.div
+          className={`h-full rounded-full ${color}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${score}%` }}
+          transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
         />
       </div>
       <span className={`text-xs font-semibold tabular-nums ${color.replace("bg-", "text-")}`}>
@@ -53,7 +56,13 @@ export function IdeaCard({ idea, index }: Props) {
   }
 
   return (
-    <div className="surface rounded-xl p-5 flex flex-col gap-3 hover:border-primary/30 border border-border transition-colors group">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay: index * 0.055, ease: "easeOut" }}
+      whileHover={{ y: -2, transition: { duration: 0.15 } }}
+      className="surface rounded-xl p-5 flex flex-col gap-3 hover:border-primary/30 border border-border transition-colors group cursor-default"
+    >
       {/* Top row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
@@ -63,13 +72,14 @@ export function IdeaCard({ idea, index }: Props) {
             {fmt.label}
           </span>
         </div>
-        <button
+        <motion.button
           onClick={copyIdea}
+          whileTap={{ scale: 0.88 }}
           className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
           title="Copy idea"
         >
           {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-        </button>
+        </motion.button>
       </div>
 
       {/* Title */}
@@ -95,6 +105,6 @@ export function IdeaCard({ idea, index }: Props) {
           <span className="font-semibold text-foreground">CTA:</span> {idea.cta}
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 }

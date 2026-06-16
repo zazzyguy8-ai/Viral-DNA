@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Users2, Plus, ShieldAlert } from "lucide-react";
 import { AddCompetitorForm } from "@/components/competitors/AddCompetitorForm";
 import { CompetitorCard } from "@/components/competitors/CompetitorCard";
@@ -52,7 +53,12 @@ export default function CompetitorsPage() {
   const highThreats = competitors.filter((c) => c.analysis.threat_level === "high").length;
 
   return (
-    <div className="max-w-5xl space-y-8">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="max-w-5xl space-y-8"
+    >
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
@@ -132,6 +138,6 @@ export default function CompetitorsPage() {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus,
   Zap, Target, Lightbulb, ShieldAlert, ArrowUpRight
@@ -54,7 +55,12 @@ export function CompetitorCard({ handle, platform, analysis, analyzedAt }: Props
   const VelocityIcon = velocity.icon;
 
   return (
-    <div className={`surface rounded-xl border ${threat.border} overflow-hidden`}>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      className={`surface rounded-xl border ${threat.border} overflow-hidden`}
+    >
       {/* Header */}
       <div className="p-5">
         <div className="flex items-start justify-between gap-3">
@@ -191,6 +197,6 @@ export function CompetitorCard({ handle, platform, analysis, analyzedAt }: Props
           </p>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

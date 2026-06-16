@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Lightbulb, RefreshCw, Filter } from "lucide-react";
 import { IdeaGeneratorForm } from "@/components/ideas/IdeaGeneratorForm";
 import { IdeaCard } from "@/components/ideas/IdeaCard";
@@ -46,7 +47,12 @@ export default function IdeasPage() {
     result?.ideas.filter((idea) => filter === "all" || idea.format === filter) ?? [];
 
   return (
-    <div className="max-w-5xl space-y-8">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="max-w-5xl space-y-8"
+    >
       <div>
         <h1 className="text-2xl font-bold tracking-tight gradient-text">Idea Engine</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -143,6 +149,6 @@ export default function IdeasPage() {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

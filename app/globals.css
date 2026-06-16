@@ -116,3 +116,11 @@
   scrollbar-width: thin;
   scrollbar-color: #E4E4E7 transparent;
 }
+
+/* Button tap feedback for native buttons */
+button:not(:disabled), [role="button"]:not(:disabled) {
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+button:active:not(:disabled), [role="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+}

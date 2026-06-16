@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Dna, Lightbulb, Users2, BarChart3, ArrowRight, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { PageWrapper } from "@/components/ui/PageWrapper";
 
 const QUICK_ACTIONS = [
   {
@@ -53,6 +54,7 @@ export default async function DashboardPage() {
   const latestDna = (dnaRes.data as Array<{ overall_score: number | null; status: string }> | null)?.[0];
 
   return (
+    <PageWrapper>
     <div className="max-w-4xl space-y-8">
       {/* Welcome */}
       <div>
@@ -131,5 +133,6 @@ export default async function DashboardPage() {
         </div>
       )}
     </div>
+    </PageWrapper>
   );
 }

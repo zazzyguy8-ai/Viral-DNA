@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   BarChart3, Loader2, TrendingUp, TrendingDown, Target,
   Zap, Calendar, Star, ChevronDown, ChevronUp, RefreshCw
@@ -240,7 +241,12 @@ export default function ReportsPage() {
   const activeReport = reports.find((r) => r.id === activeId);
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="max-w-4xl space-y-8"
+    >
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
@@ -317,6 +323,6 @@ export default function ReportsPage() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
