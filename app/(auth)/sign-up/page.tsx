@@ -2,19 +2,23 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, Mail } from "lucide-react";
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
@@ -22,7 +26,7 @@ export default function SignUpPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -37,18 +41,69 @@ export default function SignUpPage() {
       return;
     }
 
+    // If email confirmation is disabled in Supabase, session is created immediately
+    if (data.session) {
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+
     setDone(true);
+  }
+
+  async function handleResend() {
+    setResending(true);
+    setResent(false);
+    const supabase = createClient();
+    await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${location.origin}/auth/callback` },
+    });
+    setResending(false);
+    setResent(true);
   }
 
   if (done) {
     return (
-      <div className="surface rounded-xl p-8 text-center space-y-3">
-        <CheckCircle2 className="h-10 w-10 text-primary mx-auto" />
-        <h2 className="font-semibold text-lg">Check your email</h2>
-        <p className="text-sm text-muted-foreground">
-          We sent a confirmation link to <span className="text-foreground">{email}</span>.
-          Click it to activate your account.
-        </p>
+      <div>
+        <div className="mb-8 text-center">
+          <img src="/viral-dna-icon.svg" alt="Viral DNA" className="h-14 w-14 mx-auto mb-3 rounded-2xl" />
+          <span className="text-2xl font-bold tracking-tight gradient-text">Viral DNA</span>
+        </div>
+        <div className="surface rounded-xl p-8 text-center space-y-4">
+          <div className="h-12 w-12 rounded-full bg-[#EDE9FE] flex items-center justify-center mx-auto">
+            <Mail className="h-6 w-6 text-[#6D28D9]" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-lg text-foreground">Check your email</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Confirmation link sent to <span className="text-foreground font-medium">{email}</span>.<br />
+              Check spam if you don&apos;t see it.
+            </p>
+          </div>
+          <div className="pt-1">
+            {resent ? (
+              <p className="text-xs text-[#6D28D9] flex items-center justify-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Email resent!
+              </p>
+            ) : (
+              <button
+                onClick={handleResend}
+                disabled={resending}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                {resending ? "Sending…" : "Didn't get it? Resend email"}
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Already confirmed?{" "}
+            <Link href="/sign-in" className="text-[#6D28D9] hover:text-[#5B21B6] transition-colors">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     );
   }
