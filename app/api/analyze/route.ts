@@ -52,7 +52,7 @@ export async function POST(request: Request) {
         content_style: result.content_style,
         creator_positioning: result.creator_positioning,
         analysis_summary: result.analysis_summary,
-        raw_analysis: result as unknown as Record<string, unknown>,
+        raw_analysis: { ...result, platform, niche, handle } as unknown as Record<string, unknown>,
         status: "complete",
       })
       .eq("id", (dnaRecord as { id: string }).id) as unknown as { error: unknown };
