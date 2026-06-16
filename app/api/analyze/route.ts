@@ -24,7 +24,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "platform, handle, and niche are required" }, { status: 400 });
   }
 
-  // Step 3 — insert pending record
+  // Step 3 — ensure profile row exists (trigger may not have fired on signup)
+  await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
+    .upsert({ id: user.id, full_name: user.user_metadata?.full_name ?? null }, { onConflict: "id" });
+
+  // Step 4 — insert pending record
   const { data: dnaRecord, error: insertError } = await (supabase
     .from("viral_dna_profiles") as ReturnType<typeof supabase.from>)
     .insert({ user_id: user.id, status: "processing", version: 1 })
