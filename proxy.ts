@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/sign-in", "/sign-up", "/r/"];
+const PUBLIC_PATHS = ["/", "/sign-in", "/sign-up", "/auth/", "/r/"];
 
 export async function proxy(request: NextRequest) {
   // Skip auth when Supabase isn't configured yet (local dev without credentials)
