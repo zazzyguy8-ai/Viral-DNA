@@ -1,17 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { Dna, Play, Music2, Camera, Share2, Loader2, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Dna, Sparkles, AlertCircle, CheckCircle2, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { YouTubeIcon, TikTokIcon, InstagramIcon, XIcon } from "@/components/ui/BrandIcons";
 import type { ViralDNAResult } from "@/lib/anthropic/viral-dna-analyzer";
 
-const PLATFORMS = [
-  { id: "youtube", label: "YouTube", icon: Play, color: "text-red-400" },
-  { id: "tiktok", label: "TikTok", icon: Music2, color: "text-pink-400" },
-  { id: "instagram", label: "Instagram", icon: Camera, color: "text-purple-400" },
-  { id: "x", label: "X / Twitter", icon: Share2, color: "text-sky-400" },
+const PLATFORM_CONFIG = {
+  youtube: { label: "YouTube", Icon: YouTubeIcon, color: "text-red-500" },
+  tiktok: { label: "TikTok", Icon: TikTokIcon, color: "text-foreground" },
+  instagram: { label: "Instagram", Icon: InstagramIcon, color: "" },
+  x: { label: "X / Twitter", Icon: XIcon, color: "text-foreground" },
+} as const;
+
+function parsePlatformUrl(url: string): { platform: string; handle: string } | null {
+  const raw = url.trim();
+  const matchers: { regex: RegExp; platform: string }[] = [
+    { regex: /(?:youtube\.com\/(?:@|c\/|channel\/|user\/)?|youtu\.be\/)([a-zA-Z0-9_@.-]+)/i, platform: "youtube" },
+    { regex: /tiktok\.com\/?@?([a-zA-Z0-9_.]+)/i, platform: "tiktok" },
+    { regex: /instagram\.com\/([a-zA-Z0-9_.]+)\/?/i, platform: "instagram" },
+    { regex: /(?:x|twitter)\.com\/([a-zA-Z0-9_]+)\/?/i, platform: "x" },
+  ];
+  for (const { regex, platform } of matchers) {
+    const match = raw.match(regex);
+    if (match?.[1]) return { platform, handle: match[1].replace(/^@/, "") };
+  }
+  return null;
+}
+
+const STEPS = [
+  "Scanning your creator profile...",
+  "Detecting content patterns...",
+  "Calculating Viral DNA scores...",
+  "Identifying growth opportunities...",
+  "Generating your DNA report...",
 ];
 
 interface Props {
@@ -19,123 +44,168 @@ interface Props {
 }
 
 export function AnalysisForm({ onResult }: Props) {
-  const [platform, setPlatform] = useState("youtube");
-  const [handle, setHandle] = useState("");
+  const [profileUrl, setProfileUrl] = useState("");
   const [niche, setNiche] = useState("");
   const [contentDescription, setContentDescription] = useState("");
   const [bestPosts, setBestPosts] = useState("");
   const [postingFrequency, setPostingFrequency] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
-  const STEPS = [
-    "Scanning your creator profile...",
-    "Detecting content patterns...",
-    "Calculating Viral DNA scores...",
-    "Identifying growth opportunities...",
-    "Generating your DNA report...",
-  ];
+  const parsed = parsePlatformUrl(profileUrl);
+  const platformConfig = parsed ? PLATFORM_CONFIG[parsed.platform as keyof typeof PLATFORM_CONFIG] : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!parsed) {
+      setError("Paste a valid profile URL — e.g. instagram.com/yourhandle");
+      return;
+    }
     setLoading(true);
     setStep(0);
 
     const interval = setInterval(() => {
       setStep((s) => (s < STEPS.length - 1 ? s + 1 : s));
-    }, 2200);
+    }, 2400);
 
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform, handle, niche, contentDescription, bestPosts, postingFrequency }),
+        body: JSON.stringify({
+          platform: parsed.platform,
+          handle: parsed.handle,
+          profileUrl,
+          niche,
+          contentDescription,
+          bestPosts,
+          postingFrequency,
+        }),
       });
 
       const data = await res.json() as { result?: ViralDNAResult; error?: string };
+      clearInterval(interval);
 
       if (!res.ok || !data.result) {
         setError(data.error ?? "Analysis failed. Please try again.");
         setLoading(false);
-        clearInterval(interval);
         return;
       }
-
-      clearInterval(interval);
       onResult(data.result);
     } catch {
+      clearInterval(interval);
       setError("Something went wrong. Please try again.");
       setLoading(false);
-      clearInterval(interval);
     }
   }
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center justify-center py-24 gap-6"
+      >
         <div className="relative">
           <div className="h-20 w-20 rounded-full gradient-primary flex items-center justify-center glow-primary">
             <Dna className="h-10 w-10 text-white animate-pulse" />
           </div>
-          <div className="absolute inset-0 rounded-full gradient-primary opacity-20 animate-ping" />
+          <motion.div
+            className="absolute inset-0 rounded-full gradient-primary opacity-20"
+            animate={{ scale: [1, 1.6, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
         </div>
-        <div className="text-center space-y-2">
-          <p className="text-lg font-semibold gradient-text">{STEPS[step]}</p>
-          <p className="text-sm text-muted-foreground">Claude is analyzing your Viral DNA</p>
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="text-center space-y-1"
+          >
+            <p className="text-lg font-semibold gradient-text">{STEPS[step]}</p>
+            <p className="text-sm text-muted-foreground">Claude is analyzing your Viral DNA</p>
+          </motion.div>
+        </AnimatePresence>
         <div className="flex gap-1.5">
           {STEPS.map((_, i) => (
-            <div
+            <motion.div
               key={i}
-              className={`h-1.5 rounded-full transition-all duration-500 ${
-                i <= step ? "w-8 bg-primary" : "w-1.5 bg-border"
-              }`}
+              animate={{ width: i <= step ? 32 : 6, opacity: i <= step ? 1 : 0.3 }}
+              transition={{ duration: 0.4 }}
+              className="h-1.5 rounded-full bg-primary"
+              style={{ width: 6 }}
             />
           ))}
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
-      {/* Platform selector */}
+    <motion.form
+      onSubmit={handleSubmit}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-6 max-w-xl"
+    >
+      {/* Profile URL */}
       <div className="space-y-2">
-        <Label className="text-xs uppercase tracking-widest text-muted-foreground">Platform</Label>
-        <div className="grid grid-cols-4 gap-2">
-          {PLATFORMS.map(({ id, label, icon: Icon, color }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setPlatform(id)}
-              className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border transition-all text-xs font-medium ${
-                platform === id
-                  ? "border-primary bg-primary/10 text-foreground"
-                  : "border-border bg-secondary text-muted-foreground hover:border-primary/40"
-              }`}
-            >
-              <Icon className={`h-5 w-5 ${platform === id ? color : ""}`} />
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Handle */}
-      <div className="space-y-1.5">
-        <Label className="text-xs uppercase tracking-widest text-muted-foreground">Your Handle</Label>
+        <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+          Your Profile URL
+        </Label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
+          <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="yourhandle"
-            value={handle}
-            onChange={(e) => setHandle(e.target.value)}
+            placeholder="https://www.instagram.com/yourhandle"
+            value={profileUrl}
+            onChange={(e) => setProfileUrl(e.target.value)}
             required
-            className="pl-7 bg-secondary border-border"
+            className="pl-9 bg-secondary border-border"
           />
         </div>
+
+        <AnimatePresence>
+          {profileUrl && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              {parsed && platformConfig ? (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-400/10 border border-emerald-400/20">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0" />
+                  <platformConfig.Icon size={16} className={platformConfig.color} />
+                  <span className="text-xs text-emerald-400 font-medium">
+                    {platformConfig.label} · @{parsed.handle}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-400/10 border border-amber-400/20">
+                  <AlertCircle className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
+                  <span className="text-xs text-amber-400">
+                    Paste a full URL — e.g. instagram.com/handle or tiktok.com/@handle
+                  </span>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {!profileUrl && (
+          <div className="flex items-center gap-3 pt-1">
+            <YouTubeIcon size={15} />
+            <TikTokIcon size={14} className="text-foreground" />
+            <InstagramIcon size={15} />
+            <XIcon size={14} className="text-foreground" />
+            <span className="text-xs text-muted-foreground">YouTube · TikTok · Instagram · X</span>
+          </div>
+        )}
       </div>
 
       {/* Niche */}
@@ -153,10 +223,11 @@ export function AnalysisForm({ onResult }: Props) {
       {/* Content description */}
       <div className="space-y-1.5">
         <Label className="text-xs uppercase tracking-widest text-muted-foreground">
-          Describe Your Content <span className="text-muted-foreground/50 normal-case">(optional but improves accuracy)</span>
+          Describe Your Content{" "}
+          <span className="text-muted-foreground/50 normal-case font-normal">(optional — improves accuracy)</span>
         </Label>
         <textarea
-          placeholder="What topics do you cover? What's your content style? Who is your audience?"
+          placeholder="What topics do you cover? Your style? Who is your audience?"
           value={contentDescription}
           onChange={(e) => setContentDescription(e.target.value)}
           rows={3}
@@ -167,10 +238,11 @@ export function AnalysisForm({ onResult }: Props) {
       {/* Best posts */}
       <div className="space-y-1.5">
         <Label className="text-xs uppercase tracking-widest text-muted-foreground">
-          Your Best Performing Content <span className="text-muted-foreground/50 normal-case">(optional)</span>
+          Best Performing Content{" "}
+          <span className="text-muted-foreground/50 normal-case font-normal">(optional)</span>
         </Label>
         <textarea
-          placeholder="List your top 3-5 videos/posts and why they performed well..."
+          placeholder="List your top 3-5 posts and why they performed well..."
           value={bestPosts}
           onChange={(e) => setBestPosts(e.target.value)}
           rows={3}
@@ -190,25 +262,24 @@ export function AnalysisForm({ onResult }: Props) {
       </div>
 
       {error && (
-        <p className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+        <motion.p
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 flex items-center gap-2"
+        >
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
           {error}
-        </p>
+        </motion.p>
       )}
 
       <Button
         type="submit"
-        disabled={loading || !handle || !niche}
+        disabled={loading || !niche || !parsed}
         className="w-full gradient-primary text-white font-semibold h-11 gap-2"
       >
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <>
-            <Sparkles className="h-4 w-4" />
-            Analyze My Viral DNA
-          </>
-        )}
+        <Sparkles className="h-4 w-4" />
+        Analyze My Viral DNA
       </Button>
-    </form>
+    </motion.form>
   );
 }

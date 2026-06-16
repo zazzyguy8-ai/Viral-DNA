@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Dna, RefreshCw, Users, Lightbulb, Target } from "lucide-react";
 import { AnalysisForm } from "@/components/viral-dna/AnalysisForm";
 import { DNAScoreRing } from "@/components/viral-dna/DNAScoreRing";
@@ -14,22 +15,32 @@ export default function ViralDnaPage() {
 
   if (!result) {
     return (
-      <div className="max-w-2xl space-y-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="max-w-2xl space-y-8"
+      >
         <div>
           <h1 className="text-2xl font-bold tracking-tight gradient-text">Viral DNA Analysis</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Tell us about your content and Claude will identify your hidden growth patterns.
+            Paste your profile URL and Claude will identify your hidden growth patterns.
           </p>
         </div>
         <div className="surface rounded-xl p-6">
           <AnalysisForm onResult={setResult} />
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="max-w-4xl space-y-8"
+    >
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -125,6 +136,6 @@ export default function ViralDnaPage() {
         </div>
         <ViralPatternList patterns={result.viral_patterns} />
       </div>
-    </div>
+    </motion.div>
   );
 }

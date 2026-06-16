@@ -3,6 +3,7 @@ import { anthropic } from "./client";
 export interface ViralDNAInput {
   platform: string;
   handle: string;
+  profileUrl?: string;
   niche: string;
   contentDescription: string;
   bestPosts: string;
@@ -44,10 +45,11 @@ Analyze this creator and return a detailed Viral DNA profile as valid JSON.
 CREATOR DATA:
 - Platform: ${input.platform}
 - Handle: @${input.handle}
+${input.profileUrl ? `- Profile URL: ${input.profileUrl}` : ""}
 - Niche: ${input.niche}
-- Content Description: ${input.contentDescription}
-- Best Performing Content: ${input.bestPosts}
-- Posting Frequency: ${input.postingFrequency}
+- Content Description: ${input.contentDescription || "Not provided"}
+- Best Performing Content: ${input.bestPosts || "Not provided"}
+- Posting Frequency: ${input.postingFrequency || "Unknown"}
 
 Return ONLY valid JSON matching this exact structure (no markdown, no explanation):
 
@@ -91,14 +93,15 @@ Rules:
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 2000,
+    max_tokens: 4000,
     messages: [{ role: "user", content: prompt }],
   });
 
   const text = message.content[0].type === "text" ? message.content[0].text : "";
 
-  // Strip any accidental markdown fences
-  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  // Extract JSON from response — handles markdown fences and leading/trailing text
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error(`No JSON found in response: ${text.slice(0, 200)}`);
 
-  return JSON.parse(cleaned) as ViralDNAResult;
+  return JSON.parse(jsonMatch[0]) as ViralDNAResult;
 }
