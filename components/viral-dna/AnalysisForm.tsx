@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { YouTubeIcon, TikTokIcon, InstagramIcon, XIcon } from "@/components/ui/BrandIcons";
 import type { ViralDNAResult } from "@/lib/anthropic/viral-dna-analyzer";
+import { UpgradeModal } from "@/components/ui/UpgradeModal";
 
 const PLATFORM_CONFIG = {
   youtube: { label: "YouTube", Icon: YouTubeIcon, color: "text-red-500" },
@@ -52,6 +53,8 @@ export function AnalysisForm({ onResult }: Props) {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgradeData, setUpgradeData] = useState({ used: 0, limit: 2 });
 
   const parsed = parsePlatformUrl(profileUrl);
   const platformConfig = parsed ? PLATFORM_CONFIG[parsed.platform as keyof typeof PLATFORM_CONFIG] : null;
@@ -85,8 +88,15 @@ export function AnalysisForm({ onResult }: Props) {
         }),
       });
 
-      const data = await res.json() as { result?: ViralDNAResult; error?: string };
+      const data = await res.json() as { result?: ViralDNAResult; error?: string; used?: number; limit?: number };
       clearInterval(interval);
+
+      if (res.status === 402) {
+        setUpgradeData({ used: data.used ?? 2, limit: data.limit ?? 2 });
+        setUpgradeOpen(true);
+        setLoading(false);
+        return;
+      }
 
       if (!res.ok || !data.result) {
         setError(data.error ?? "Analysis failed. Please try again.");
@@ -280,6 +290,13 @@ export function AnalysisForm({ onResult }: Props) {
         <Sparkles className="h-4 w-4" />
         Analyze My Viral DNA
       </Button>
+
+      <UpgradeModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        used={upgradeData.used}
+        limit={upgradeData.limit}
+      />
     </motion.form>
   );
 }

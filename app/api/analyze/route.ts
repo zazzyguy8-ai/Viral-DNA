@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { analyzeViralDNA } from "@/lib/anthropic/viral-dna-analyzer";
+import { canRunAnalysis } from "@/lib/usage";
 
 export async function POST(request: Request) {
   // Step 1 — auth
@@ -27,6 +28,15 @@ export async function POST(request: Request) {
   // Step 3 — ensure profile row exists (trigger may not have fired on signup)
   await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
     .upsert({ id: user.id, full_name: user.user_metadata?.full_name ?? null }, { onConflict: "id" });
+
+  // Step 3b — check usage limit
+  const usage = await canRunAnalysis(supabase, user.id);
+  if (!usage.allowed) {
+    return NextResponse.json(
+      { error: "limit_reached", used: usage.used, limit: usage.limit, plan: usage.plan },
+      { status: 402 }
+    );
+  }
 
   // Step 4 — insert pending record
   const { data: dnaRecord, error: insertError } = await (supabase
@@ -55,11 +65,12 @@ export async function POST(request: Request) {
       postingFrequency: postingFrequency ?? "unknown",
     });
   } catch (err) {
-    console.error("Claude error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Claude error:", msg);
     await (supabase.from("viral_dna_profiles") as ReturnType<typeof supabase.from>)
       .update({ status: "failed" })
       .eq("id", dnaId);
-    return NextResponse.json({ error: "AI analysis failed — please try again" }, { status: 500 });
+    return NextResponse.json({ error: `Analysis failed: ${msg}` }, { status: 500 });
   }
 
   // Step 5 — save results
