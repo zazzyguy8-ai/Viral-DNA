@@ -68,7 +68,7 @@ Return ONLY valid JSON (no markdown fences) in this exact format:
 Be specific and realistic. Threat level: high = they dominate the niche, medium = strong but beatable, low = easy to outperform.`;
 
   const msg = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 1500,
     messages: [{ role: "user", content: prompt }],
   });
