@@ -71,7 +71,7 @@ export function AnalysisForm({ onResult }: Props) {
 
     const interval = setInterval(() => {
       setStep((s) => (s < STEPS.length - 1 ? s + 1 : s));
-    }, 2400);
+    }, 4500);
 
     try {
       const res = await fetch("/api/analyze", {

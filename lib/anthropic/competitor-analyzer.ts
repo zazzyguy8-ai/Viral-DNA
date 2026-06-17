@@ -25,7 +25,11 @@ export interface CompetitorAnalysis {
 }
 
 export async function analyzeCompetitor(input: CompetitorInput): Promise<CompetitorAnalysis> {
-  const prompt = `You are a competitive intelligence analyst for content creators. Analyze this competitor creator and identify strategic insights.
+  const prompt = `You are a competitive intelligence analyst for content creators.
+
+STEP 1: Use web_search to find real data about this competitor. Search for: "@${input.handle} ${input.platform} creator" — find their real follower count, recent viral content, posting patterns, and engagement stats.
+STEP 2: Use the real data you find to build accurate competitive intelligence.
+STEP 3: Return your analysis as valid JSON.
 
 Competitor:
 - Platform: ${input.platform}
@@ -35,13 +39,13 @@ ${input.description ? `- Additional context: ${input.description}` : ""}
 
 Return ONLY valid JSON (no markdown fences) in this exact format:
 {
-  "display_name": "Estimated or inferred creator name",
-  "estimated_followers": 50000,
+  "display_name": "Real creator name found from search, or handle if unknown",
+  "estimated_followers": <real follower count from search, or best estimate>,
   "growth_velocity": "fast|medium|slow",
-  "content_style": "1 sentence description of their content style",
-  "posting_frequency": "e.g. daily, 3x/week",
+  "content_style": "1 sentence description based on real content found",
+  "posting_frequency": "e.g. daily, 3x/week — based on real posting pattern",
   "strengths": [
-    "3-4 specific things they do really well"
+    "3-4 specific things they do really well — cite real examples/videos"
   ],
   "weaknesses": [
     "2-3 genuine gaps or weaknesses you can exploit"
@@ -54,30 +58,42 @@ Return ONLY valid JSON (no markdown fences) in this exact format:
   ],
   "top_formats": ["short-video", "carousel"],
   "viral_hooks": [
-    "Hook pattern they likely use",
-    "Another typical hook pattern"
+    "Real hook pattern from their actual content",
+    "Another hook pattern you found"
   ],
   "threat_level": "high|medium|low",
-  "key_insight": "The single most important insight about this competitor in 1 sentence",
+  "key_insight": "The single most important insight about this competitor — based on real data",
   "steal_worthy": [
-    "Specific tactic or format to adapt (not copy)",
+    "Specific tactic or format to adapt (not copy) — from real content",
     "Another steal-worthy approach"
   ]
 }
 
-Be specific and realistic. Threat level: high = they dominate the niche, medium = strong but beatable, low = easy to outperform.`;
+Be specific and use REAL data from your search. Threat level: high = they dominate the niche, medium = strong but beatable, low = easy to outperform.`;
 
   const msg = await anthropic.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 1500,
+    model: "claude-sonnet-4-6",
+    max_tokens: 1300,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tools: [{ type: "web_search_20260209", name: "web_search" } as any],
     messages: [{ role: "user", content: prompt }],
   });
 
-  const raw = (msg.content[0] as { type: string; text: string }).text
+  // Find the last text block — server-side web search may produce multiple content blocks
+  let raw = "";
+  for (const block of msg.content) {
+    if (block.type === "text") raw = block.text;
+  }
+
+  raw = raw
     .replace(/^```json\s*/m, "")
     .replace(/^```\s*/m, "")
     .replace(/\s*```$/m, "")
     .trim();
 
-  return JSON.parse(raw) as CompetitorAnalysis;
+  // Extract JSON if there's surrounding text
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error(`No JSON found in competitor response: ${raw.slice(0, 200)}`);
+
+  return JSON.parse(jsonMatch[0]) as CompetitorAnalysis;
 }
