@@ -26,13 +26,15 @@ export async function POST(request: Request) {
       .from("competitors") as ReturnType<typeof supabase.from>)
       .upsert(
         { user_id: user.id, platform, handle: handle.replace("@", ""), display_name: null },
-        { onConflict: "user_id,handle,platform" }
+        { onConflict: "user_id,platform,handle" }
       )
       .select("id")
-      .single() as unknown as { data: { id: string } | null; error: unknown };
+      .single() as unknown as { data: { id: string } | null; error: { message: string } | null };
 
     if (competitorError || !competitor) {
-      return NextResponse.json({ error: "Failed to save competitor" }, { status: 500 });
+      const msg = (competitorError as { message?: string } | null)?.message ?? "unknown";
+      console.error("Competitor upsert error:", msg);
+      return NextResponse.json({ error: `Failed to save competitor: ${msg}` }, { status: 500 });
     }
 
     const analysis = await analyzeCompetitor({ platform, handle, niche, description });
