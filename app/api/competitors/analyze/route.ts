@@ -21,21 +21,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "platform, handle, and niche are required" }, { status: 400 });
     }
 
-    // Upsert competitor record
-    const { data: competitor, error: competitorError } = await (supabase
-      .from("competitors") as ReturnType<typeof supabase.from>)
-      .upsert(
-        { user_id: user.id, platform, handle: handle.replace("@", ""), display_name: null },
-        { onConflict: "user_id,platform,handle" }
-      )
-      .select("id")
-      .single() as unknown as { data: { id: string } | null; error: { message: string } | null };
+    const cleanHandle = handle.replace("@", "");
 
-    if (competitorError || !competitor) {
-      const msg = (competitorError as { message?: string } | null)?.message ?? "unknown";
-      console.error("Competitor upsert error:", msg);
-      return NextResponse.json({ error: `Failed to save competitor: ${msg}` }, { status: 500 });
+    // Check if competitor already exists
+    const { data: existing } = await (supabase
+      .from("competitors") as ReturnType<typeof supabase.from>)
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("platform", platform)
+      .eq("handle", cleanHandle)
+      .maybeSingle() as unknown as { data: { id: string } | null };
+
+    let competitorId: string;
+
+    if (existing) {
+      competitorId = existing.id;
+    } else {
+      const { data: inserted, error: insertError } = await (supabase
+        .from("competitors") as ReturnType<typeof supabase.from>)
+        .insert({ user_id: user.id, platform, handle: cleanHandle, display_name: null })
+        .select("id")
+        .single() as unknown as { data: { id: string } | null; error: { message: string } | null };
+
+      if (insertError || !inserted) {
+        const msg = (insertError as { message?: string } | null)?.message ?? "unknown";
+        console.error("Competitor insert error:", msg);
+        return NextResponse.json({ error: `Failed to save competitor: ${msg}` }, { status: 500 });
+      }
+      competitorId = inserted.id;
     }
+
+    const competitor = { id: competitorId };
 
     const analysis = await analyzeCompetitor({ platform, handle, niche, description });
 
