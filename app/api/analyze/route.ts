@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { analyzeViralDNA } from "@/lib/anthropic/viral-dna-analyzer";
+import { analyzeViralDNA, type AnalyticsImage } from "@/lib/anthropic/viral-dna-analyzer";
 import { canRunAnalysis } from "@/lib/usage";
+import { fetchYouTubeChannel } from "@/lib/youtube";
 
 export async function POST(request: Request) {
   // Step 1 — auth
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { platform, handle, profileUrl, niche, contentDescription, bestPosts, postingFrequency } = body;
+  const { platform, handle, profileUrl, niche, contentDescription, bestPosts, postingFrequency, analyticsImage } = body as Record<string, string> & { analyticsImage?: AnalyticsImage };
 
   if (!platform || !handle || !niche) {
     return NextResponse.json({ error: "platform, handle, and niche are required" }, { status: 400 });
@@ -52,7 +53,10 @@ export async function POST(request: Request) {
 
   const dnaId = (dnaRecord as { id: string }).id;
 
-  // Step 4 — run Claude
+  // Step 4 — pre-fetch real data (YouTube API if available)
+  const youtubeData = platform === "youtube" ? (await fetchYouTubeChannel(handle) ?? undefined) : undefined;
+
+  // Step 5 — run Claude
   let result;
   try {
     result = await analyzeViralDNA({
@@ -63,6 +67,8 @@ export async function POST(request: Request) {
       contentDescription: contentDescription ?? "",
       bestPosts: bestPosts ?? "",
       postingFrequency: postingFrequency ?? "unknown",
+      youtubeData,
+      analyticsImage: analyticsImage ?? undefined,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

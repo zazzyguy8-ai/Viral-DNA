@@ -1,10 +1,13 @@
 import { anthropic } from "./client";
+import type { YouTubeChannelData } from "@/lib/youtube";
+import { formatYouTubeDataForPrompt } from "@/lib/youtube";
 
 export interface CompetitorInput {
   platform: string;
   handle: string;
   niche: string;
   description?: string;
+  youtubeData?: YouTubeChannelData;
 }
 
 export interface CompetitorAnalysis {
@@ -24,65 +27,84 @@ export interface CompetitorAnalysis {
   steal_worthy: string[];
 }
 
+const JSON_SCHEMA = `{
+  "display_name": "Real creator name or handle",
+  "estimated_followers": <real or estimated number>,
+  "growth_velocity": "fast|medium|slow",
+  "content_style": "1 sentence — specific to their actual content",
+  "posting_frequency": "e.g. daily, 3x/week",
+  "strengths": ["3-4 specific things with real examples"],
+  "weaknesses": ["2-3 real gaps you can exploit"],
+  "content_gaps": ["3-4 topics/angles they're missing"],
+  "opportunities": ["3-4 specific ways to capture their audience"],
+  "top_formats": ["short-video", "carousel"],
+  "viral_hooks": ["Real hook from their content", "Another real hook pattern"],
+  "threat_level": "high|medium|low",
+  "key_insight": "The single most important insight — data-driven",
+  "steal_worthy": ["Specific tactic to adapt (not copy)", "Another steal-worthy approach"]
+}`;
+
 export async function analyzeCompetitor(input: CompetitorInput): Promise<CompetitorAnalysis> {
-  const prompt = `You are a competitive intelligence analyst for content creators.
-
-STEP 1: Use web_search to find real data about this competitor. Search for: "@${input.handle} ${input.platform} creator" — find their real follower count, recent viral content, posting patterns, and engagement stats.
-STEP 2: Use the real data you find to build accurate competitive intelligence.
-STEP 3: Return your analysis as valid JSON.
-
-Competitor:
+  const competitorContext = `Competitor:
 - Platform: ${input.platform}
 - Handle: @${input.handle}
 - Niche: ${input.niche}
-${input.description ? `- Additional context: ${input.description}` : ""}
+${input.description ? `- Additional context: ${input.description}` : ""}`;
 
-Return ONLY valid JSON (no markdown fences) in this exact format:
-{
-  "display_name": "Real creator name found from search, or handle if unknown",
-  "estimated_followers": <real follower count from search, or best estimate>,
-  "growth_velocity": "fast|medium|slow",
-  "content_style": "1 sentence description based on real content found",
-  "posting_frequency": "e.g. daily, 3x/week — based on real posting pattern",
-  "strengths": [
-    "3-4 specific things they do really well — cite real examples/videos"
-  ],
-  "weaknesses": [
-    "2-3 genuine gaps or weaknesses you can exploit"
-  ],
-  "content_gaps": [
-    "3-4 topics/angles they're missing that their audience would want"
-  ],
-  "opportunities": [
-    "3-4 specific opportunities for you to capture their audience"
-  ],
-  "top_formats": ["short-video", "carousel"],
-  "viral_hooks": [
-    "Real hook pattern from their actual content",
-    "Another hook pattern you found"
-  ],
-  "threat_level": "high|medium|low",
-  "key_insight": "The single most important insight about this competitor — based on real data",
-  "steal_worthy": [
-    "Specific tactic or format to adapt (not copy) — from real content",
-    "Another steal-worthy approach"
-  ]
-}
+  let raw: string;
 
-Be specific and use REAL data from your search. Threat level: high = they dominate the niche, medium = strong but beatable, low = easy to outperform.`;
+  // ── PATH A: YouTube with real API data ──────────────────────────────────
+  if (input.youtubeData) {
+    const prompt = `You are a competitive intelligence analyst for content creators.
 
-  const msg = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1300,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tools: [{ type: "web_search_20260209", name: "web_search" } as any],
-    messages: [{ role: "user", content: prompt }],
-  });
+${competitorContext}
 
-  // Find the last text block — server-side web search may produce multiple content blocks
-  let raw = "";
-  for (const block of msg.content) {
-    if (block.type === "text") raw = block.text;
+${formatYouTubeDataForPrompt(input.youtubeData)}
+
+Analyze this competitor using the real YouTube data above. Return ONLY valid JSON (no markdown fences):
+
+${JSON_SCHEMA}
+
+Threat level: high = they dominate the niche, medium = strong but beatable, low = easy to outperform.
+Be specific — cite actual video titles and real numbers from the data above.`;
+
+    const msg = await anthropic.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 1300,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    raw = msg.content[0].type === "text" ? msg.content[0].text : "";
+
+  // ── PATH B: Web search ──────────────────────────────────────────────────
+  } else {
+    const prompt = `You are a competitive intelligence analyst for content creators.
+
+STEP 1: Use web_search to find real data about this competitor. Search "@${input.handle} ${input.platform} creator" for their real follower count, recent viral content, and posting patterns.
+STEP 2: Use the real data in your competitive analysis.
+STEP 3: Return valid JSON.
+
+${competitorContext}
+
+Return ONLY valid JSON (no markdown fences):
+
+${JSON_SCHEMA}
+
+Threat level: high = they dominate the niche, medium = strong but beatable, low = easy to outperform.
+Use REAL data from search — cite actual video titles and real follower numbers.`;
+
+    const msg = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1300,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tools: [{ type: "web_search_20260209", name: "web_search" } as any],
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    raw = "";
+    for (const block of msg.content) {
+      if (block.type === "text") raw = block.text;
+    }
   }
 
   raw = raw
@@ -91,9 +113,8 @@ Be specific and use REAL data from your search. Threat level: high = they domina
     .replace(/\s*```$/m, "")
     .trim();
 
-  // Extract JSON if there's surrounding text
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error(`No JSON found in competitor response: ${raw.slice(0, 200)}`);
+  if (!jsonMatch) throw new Error(`No JSON in competitor response: ${raw.slice(0, 200)}`);
 
   return JSON.parse(jsonMatch[0]) as CompetitorAnalysis;
 }

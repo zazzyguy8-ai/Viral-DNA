@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dna, Sparkles, AlertCircle, CheckCircle2, Link } from "lucide-react";
+import { Dna, Sparkles, AlertCircle, CheckCircle2, Link, ImagePlus, X as XIcon2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { YouTubeIcon, TikTokIcon, InstagramIcon, XIcon } from "@/components/ui/BrandIcons";
-import type { ViralDNAResult } from "@/lib/anthropic/viral-dna-analyzer";
+import type { ViralDNAResult, AnalyticsImage } from "@/lib/anthropic/viral-dna-analyzer";
 import { UpgradeModal } from "@/components/ui/UpgradeModal";
 
 const PLATFORM_CONFIG = {
@@ -32,13 +32,29 @@ function parsePlatformUrl(url: string): { platform: string; handle: string } | n
   return null;
 }
 
-const STEPS = [
-  "Scanning your creator profile...",
-  "Detecting content patterns...",
-  "Calculating Viral DNA scores...",
-  "Identifying growth opportunities...",
-  "Generating your DNA report...",
-];
+const STEPS: Record<string, string[]> = {
+  youtube: [
+    "Fetching your YouTube channel data...",
+    "Analyzing your recent videos...",
+    "Calculating Viral DNA scores...",
+    "Identifying growth patterns...",
+    "Generating your DNA report...",
+  ],
+  screenshot: [
+    "Reading your analytics screenshot...",
+    "Extracting real metrics...",
+    "Calculating Viral DNA scores...",
+    "Identifying growth opportunities...",
+    "Generating your DNA report...",
+  ],
+  default: [
+    "Searching for your creator profile...",
+    "Detecting content patterns...",
+    "Calculating Viral DNA scores...",
+    "Identifying growth opportunities...",
+    "Generating your DNA report...",
+  ],
+};
 
 interface Props {
   onResult: (result: ViralDNAResult) => void;
@@ -50,14 +66,43 @@ export function AnalysisForm({ onResult }: Props) {
   const [contentDescription, setContentDescription] = useState("");
   const [bestPosts, setBestPosts] = useState("");
   const [postingFrequency, setPostingFrequency] = useState("");
+  const [analyticsImage, setAnalyticsImage] = useState<AnalyticsImage | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStepKey, setLoadingStepKey] = useState("default");
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeData, setUpgradeData] = useState({ used: 0, limit: 2 });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parsed = parsePlatformUrl(profileUrl);
   const platformConfig = parsed ? PLATFORM_CONFIG[parsed.platform as keyof typeof PLATFORM_CONFIG] : null;
+  const showScreenshotUpload = parsed && (parsed.platform === "instagram" || parsed.platform === "tiktok");
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Screenshot must be under 5MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const [header, base64Data] = dataUrl.split(",");
+      const mediaType = (header.match(/data:([^;]+)/)?.[1] ?? "image/jpeg") as AnalyticsImage["mediaType"];
+      setAnalyticsImage({ data: base64Data, mediaType });
+      setImagePreviewUrl(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearImage() {
+    setAnalyticsImage(null);
+    setImagePreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -69,9 +114,13 @@ export function AnalysisForm({ onResult }: Props) {
     setLoading(true);
     setStep(0);
 
+    const stepKey = parsed.platform === "youtube" ? "youtube" : analyticsImage ? "screenshot" : "default";
+    setLoadingStepKey(stepKey);
+    const stepInterval = parsed.platform === "youtube" ? 2000 : 4500;
+
     const interval = setInterval(() => {
-      setStep((s) => (s < STEPS.length - 1 ? s + 1 : s));
-    }, 4500);
+      setStep((s) => (s < STEPS[stepKey].length - 1 ? s + 1 : s));
+    }, stepInterval);
 
     try {
       const res = await fetch("/api/analyze", {
@@ -85,6 +134,7 @@ export function AnalysisForm({ onResult }: Props) {
           contentDescription,
           bestPosts,
           postingFrequency,
+          analyticsImage: analyticsImage ?? undefined,
         }),
       });
 
@@ -136,12 +186,12 @@ export function AnalysisForm({ onResult }: Props) {
             exit={{ opacity: 0, y: -8 }}
             className="text-center space-y-1"
           >
-            <p className="text-lg font-semibold gradient-text">{STEPS[step]}</p>
+            <p className="text-lg font-semibold gradient-text">{STEPS[loadingStepKey][step]}</p>
             <p className="text-sm text-muted-foreground">Claude is analyzing your Viral DNA</p>
           </motion.div>
         </AnimatePresence>
         <div className="flex gap-1.5">
-          {STEPS.map((_, i) => (
+          {STEPS[loadingStepKey].map((_, i) => (
             <motion.div
               key={i}
               animate={{ width: i <= step ? 32 : 6, opacity: i <= step ? 1 : 0.3 }}
@@ -217,6 +267,60 @@ export function AnalysisForm({ onResult }: Props) {
           </div>
         )}
       </div>
+
+      {/* Analytics screenshot — only for IG/TikTok */}
+      <AnimatePresence>
+        {showScreenshotUpload && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+                Analytics Screenshot{" "}
+                <span className="text-muted-foreground/50 normal-case font-normal">(optional — gives real data)</span>
+              </Label>
+              {!imagePreviewUrl ? (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-dashed border-border bg-secondary hover:border-primary/50 hover:bg-primary/5 transition-all text-sm text-muted-foreground"
+                >
+                  <ImagePlus className="h-4 w-4 flex-shrink-0 text-primary" />
+                  <span>
+                    Screenshot your {parsed?.platform === "instagram" ? "Instagram Insights" : "TikTok Creator Center"} and upload it here
+                  </span>
+                </button>
+              ) : (
+                <div className="relative rounded-lg overflow-hidden border border-border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imagePreviewUrl} alt="Analytics screenshot" className="w-full max-h-40 object-cover" />
+                  <button
+                    type="button"
+                    onClick={clearImage}
+                    className="absolute top-2 right-2 p-1 rounded-full bg-black/60 text-white hover:bg-black/80"
+                  >
+                    <XIcon2 className="h-3.5 w-3.5" />
+                  </button>
+                  <div className="px-3 py-1.5 bg-emerald-400/10 border-t border-emerald-400/20 flex items-center gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    <span className="text-xs text-emerald-400 font-medium">Screenshot added — analysis will use your real data</span>
+                  </div>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Niche */}
       <div className="space-y-1.5">

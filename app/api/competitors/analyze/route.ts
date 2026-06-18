@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { analyzeCompetitor, type CompetitorInput } from "@/lib/anthropic/competitor-analyzer";
+import { fetchYouTubeChannel } from "@/lib/youtube";
 
 export async function POST(request: Request) {
   try {
@@ -53,7 +54,8 @@ export async function POST(request: Request) {
 
     const competitor = { id: competitorId };
 
-    const analysis = await analyzeCompetitor({ platform, handle, niche, description });
+    const youtubeData = platform === "youtube" ? (await fetchYouTubeChannel(cleanHandle) ?? undefined) : undefined;
+    const analysis = await analyzeCompetitor({ platform, handle: cleanHandle, niche, description, youtubeData });
 
     // Update display_name on competitor record
     await (supabase.from("competitors") as ReturnType<typeof supabase.from>)
