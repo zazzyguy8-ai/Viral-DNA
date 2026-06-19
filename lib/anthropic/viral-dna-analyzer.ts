@@ -153,13 +153,11 @@ ${RULES}`;
 
     text = message.content[0].type === "text" ? message.content[0].text : "";
 
-  // ── PATH C: Web search for unknown/smaller creators ─────────────────────
+  // ── PATH C: Web search with 24s timeout → fallback to Haiku ────────────
   } else {
-    const prompt = `You are the Viral DNA Engine — an elite AI system that analyzes content creators.
+    const searchPrompt = `You are the Viral DNA Engine — an elite AI system that analyzes content creators.
 
-STEP 1: Use web_search to find real information about this creator. Search for "@${input.handle} ${input.platform} creator" to find their follower count, recent content titles, and engagement data.
-STEP 2: Use the real data you find in your analysis. Reference specific titles and real numbers.
-STEP 3: Return the Viral DNA profile as valid JSON.
+Do ONE web_search for "@${input.handle} ${input.platform}" to find their real follower count and recent content. Then analyze and return JSON.
 
 ${creatorContext}
 
@@ -170,19 +168,45 @@ ${JSON_SCHEMA}
 ${RULES}
 - If the creator is small/unknown and search returns limited data, say so in analysis_summary but still give your best analysis`;
 
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1600,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tools: [{ type: "web_search_20260209", name: "web_search" } as any],
-      messages: [{ role: "user", content: prompt }],
-    });
+    const fallbackPrompt = `You are the Viral DNA Engine — an elite AI system that analyzes content creators.
 
-    // Find the last text block — server-side web search produces multiple content blocks
-    for (const block of message.content) {
-      if (block.type === "text") text = block.text;
+${creatorContext}
+
+Analyze this creator based on their handle, platform, and niche. Be as specific as possible. Return ONLY valid JSON (no markdown):
+
+${JSON_SCHEMA}
+
+${RULES}`;
+
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 24000);
+
+      const message = await anthropic.messages.create(
+        {
+          model: "claude-sonnet-4-6",
+          max_tokens: 1400,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          tools: [{ type: "web_search_20260209", name: "web_search" } as any],
+          messages: [{ role: "user", content: searchPrompt }],
+        },
+        { signal: controller.signal }
+      );
+      clearTimeout(timer);
+
+      for (const block of message.content) {
+        if (block.type === "text") text = block.text;
+      }
+      text ??= "";
+    } catch {
+      // Timed out or web search failed — fall back to fast Haiku
+      const fallback = await anthropic.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1800,
+        messages: [{ role: "user", content: fallbackPrompt }],
+      });
+      text = fallback.content[0].type === "text" ? fallback.content[0].text : "";
     }
-    text ??= "";
   }
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);

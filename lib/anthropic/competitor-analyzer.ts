@@ -76,35 +76,28 @@ Be specific — cite actual video titles and real numbers from the data above.`;
 
     raw = msg.content[0].type === "text" ? msg.content[0].text : "";
 
-  // ── PATH B: Web search ──────────────────────────────────────────────────
+  // ── PATH B: Fast Haiku analysis (no web search — avoids Render timeout) ──
   } else {
     const prompt = `You are a competitive intelligence analyst for content creators.
 
-STEP 1: Use web_search to find real data about this competitor. Search "@${input.handle} ${input.platform} creator" for their real follower count, recent viral content, and posting patterns.
-STEP 2: Use the real data in your competitive analysis.
-STEP 3: Return valid JSON.
-
 ${competitorContext}
+
+Analyze this competitor based on your knowledge of the platform, niche, and creator landscape. Be as specific as possible given the handle and niche provided.
 
 Return ONLY valid JSON (no markdown fences):
 
 ${JSON_SCHEMA}
 
 Threat level: high = they dominate the niche, medium = strong but beatable, low = easy to outperform.
-Use REAL data from search — cite actual video titles and real follower numbers.`;
+Be specific and strategic — give actionable insights, not generic advice.`;
 
     const msg = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 1300,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tools: [{ type: "web_search_20260209", name: "web_search" } as any],
       messages: [{ role: "user", content: prompt }],
     });
 
-    raw = "";
-    for (const block of msg.content) {
-      if (block.type === "text") raw = block.text;
-    }
+    raw = msg.content[0].type === "text" ? msg.content[0].text : "";
   }
 
   raw = raw
